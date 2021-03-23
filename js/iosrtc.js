@@ -23,8 +23,9 @@ var // Dictionary of MediaStreamRenderers.
 	RTCIceCandidate = require('./RTCIceCandidate'),
 	MediaDevices = require('./MediaDevices'),
 	MediaStream = require('./MediaStream'),
-	MediaStreamTrack = require('./MediaStreamTrack'),
-	videoElementsHandler = require('./videoElementsHandler');
+	{ MediaStreamTrack } = require('./MediaStreamTrack'),
+	videoElementsHandler = require('./videoElementsHandler'),
+	{ RTCRtpTransceiver } = require('./RTCRtpTransceiver');
 
 /**
  * Expose the iosrtc object.
@@ -184,10 +185,6 @@ function registerGlobals(doNotRestoreCallbacksSupport) {
 		global.navigator = {};
 	}
 
-	if (!navigator.mediaDevices) {
-		navigator.mediaDevices = new MediaDevices();
-	}
-
 	// Restore Callback support
 	if (!doNotRestoreCallbacksSupport) {
 		restoreCallbacksSupport();
@@ -195,8 +192,24 @@ function registerGlobals(doNotRestoreCallbacksSupport) {
 
 	navigator.getUserMedia = getUserMedia;
 	navigator.webkitGetUserMedia = getUserMedia;
-	navigator.mediaDevices.getUserMedia = getUserMedia;
-	navigator.mediaDevices.enumerateDevices = enumerateDevices;
+
+	// Prevent WebRTC-adapter to overide navigator.mediaDevices after shim is applied since ios 14.3
+	if (!(navigator.mediaDevices instanceof MediaDevices)) {
+		Object.defineProperty(
+			navigator,
+			'mediaDevices',
+			{
+				value: new MediaDevices(),
+				writable: false
+			},
+			{
+				enumerable: false,
+				configurable: false,
+				writable: false,
+				value: 'static'
+			}
+		);
+	}
 
 	window.RTCPeerConnection = RTCPeerConnection;
 	window.webkitRTCPeerConnection = RTCPeerConnection;
@@ -205,6 +218,7 @@ function registerGlobals(doNotRestoreCallbacksSupport) {
 	window.MediaStream = MediaStream;
 	window.webkitMediaStream = MediaStream;
 	window.MediaStreamTrack = MediaStreamTrack;
+	window.RTCRtpTransceiver = RTCRtpTransceiver;
 
 	// Apply CanvasRenderingContext2D.drawImage monkey patch
 	var drawImage = CanvasRenderingContext2D.prototype.drawImage;

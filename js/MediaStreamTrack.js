@@ -1,7 +1,8 @@
 /**
  * Expose the MediaStreamTrack class.
  */
-module.exports = MediaStreamTrack;
+module.exports.MediaStreamTrack = MediaStreamTrack;
+module.exports.newMediaStreamTrackId = newMediaStreamTrackId;
 
 /**
  * Spec: http://w3c.github.io/mediacapture-main/#mediastreamtrack
@@ -41,11 +42,14 @@ function MediaStreamTrack(dataFromEvent) {
 	this.kind = dataFromEvent.kind;
 	this.label = dataFromEvent.label;
 	this.muted = false; // TODO: No "muted" property in ObjC API.
+	this.capabilities = dataFromEvent.capabilities;
 	this.readyState = dataFromEvent.readyState;
 
 	// Private attributes.
 	this._enabled = dataFromEvent.enabled;
 	this._ended = false;
+
+	this.dataFromEvent = dataFromEvent;
 
 	function onResultOK(data) {
 		onEvent.call(self, data);
@@ -74,11 +78,13 @@ Object.defineProperty(MediaStreamTrack.prototype, 'enabled', {
 });
 
 MediaStreamTrack.prototype.getConstraints = function () {
-	throw new Error('Not implemented.');
+	debug('MediaStreamTrack.prototype.getConstraints  is not implemented.');
+	return {};
 };
 
-MediaStreamTrack.prototype.applyConstraints = function () {
-	throw new Error('Not implemented.');
+MediaStreamTrack.prototype.applyConstraints = function (constraints) {
+	debug('MediaStreamTrack.prototype.applyConstraints  is not implemented.', constraints);
+	return Promise.reject(new Error('applyConstraints is not implemented.'));
 };
 
 MediaStreamTrack.prototype.clone = function () {
@@ -91,14 +97,13 @@ MediaStreamTrack.prototype.clone = function () {
 		kind: this.kind,
 		label: this.label,
 		readyState: this.readyState,
-		enabled: this.enabled
+		enabled: this.enabled,
+		trackId: this.dataFromEvent.trackId
 	});
 };
 
 MediaStreamTrack.prototype.getCapabilities = function () {
-	//throw new Error('Not implemented.');
-	// SHAM
-	return new MediaTrackCapabilities();
+	return new MediaTrackCapabilities(this.capabilities);
 };
 
 MediaStreamTrack.prototype.getSettings = function () {
